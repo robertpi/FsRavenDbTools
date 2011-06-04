@@ -5,10 +5,10 @@
     <version>0.4</version>
     <authors>Robert Pickering</authors>
     <owners>Robert Pickering</owners>
-    <projectUrl>https://github.com/robertpi/log4f</projectUrl>
+    <projectUrl>https://github.com/robertpi/FsRavenDbTools</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Package description</description>
     <tags>F# fsharp nosql</tags>
+    <description>Help using RavenDB from F# (and Newtonsoft.Json)</description>
     <dependencies>
       <dependency id="Newtonsoft.Json" version="4.0.2" />
       <dependency id="RavenDB" version="1.0.0.360" />
