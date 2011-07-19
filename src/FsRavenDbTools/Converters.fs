@@ -20,7 +20,14 @@ type OptionTypeConverter() =
 
     override x.ReadJson(reader: JsonReader, objectType: Type, existingValue: obj, serializer: JsonSerializer) = 
         let cases = Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(objectType)
-        let value = serializer.Deserialize(reader, objectType.GetGenericArguments().[0]);
+        let t = objectType.GetGenericArguments().[0]
+        let t = 
+            if t.IsValueType then 
+                let nullable = typedefof<Nullable<int>> 
+                nullable.MakeGenericType [|t|]
+            else 
+                t
+        let value = serializer.Deserialize(reader, t)
         if value <> null then
             FSharpValue.MakeUnion(cases.[1], [|value|])
         else
