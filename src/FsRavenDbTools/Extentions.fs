@@ -15,9 +15,3 @@ module DocumentStoreExt =
                 converters.Add(new UnionTypeConverter())
             store.Conventions.CustomizeJsonSerializer <- new Action<JsonSerializer>(fun x -> addConverters x.Converters)
             store
-
-module SessionExt =
-    type Raven.Client.IDocumentSession with
-        member x.StoreImmutable(entity) =
-            x.Advanced.Evict entity
-            x.Store entity
