@@ -36,45 +36,37 @@ type OptionTypeConverter() =
 
 type UnionTypeConverter() =
     inherit JsonConverter()
+
     override x.CanConvert(typ:Type) =
         FSharpType.IsUnion typ 
 
     override x.WriteJson(writer: JsonWriter, value: obj, serializer: JsonSerializer) =
         let t = value.GetType()
-        let fieldInfo = t.GetField("_tag", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance) 
-        let tag = fieldInfo.GetValue(value) :?> int
+        let (info, fields) = FSharpValue.GetUnionFields(value, t)
         writer.WriteStartObject()
         writer.WritePropertyName("_tag")
-        writer.WriteValue(tag)
+        writer.WriteValue(info.Tag)
         let cases = FSharpType.GetUnionCases(t)
-        let case = cases.[tag]
-        //printfn "case: %s" case.Name 
+        let case = cases.[info.Tag]
         let fields = case.GetFields()
         for field in fields do
-            //printfn "%s %s" field.Name field.PropertyType.Name
-            //printfn "%s %s" (value.GetType().FullName) field.DeclaringType.Name
             writer.WritePropertyName(field.Name)
             serializer.Serialize(writer, field.GetValue(value, [||]))
         writer.WriteEndObject()
 
     override x.ReadJson(reader: JsonReader, objectType: Type, existingValue: obj, serializer: JsonSerializer) =
-        //printfn "%A" reader.Value
-        reader.Read() |> ignore
-        //printfn "%A" reader.Value
-        reader.Read() |> ignore
-        //printfn "%A" reader.Value
-        let tag = reader.Value
-        //printfn "tag: %A tag type: %s" tag (tag.GetType().FullName)
-        let tag = int (tag :?> int64)
-        let cases = FSharpType.GetUnionCases(objectType)
-        let case = cases.[tag]
-        let fieldValues =
-            [| for field in case.GetFields() do
-                // not sure why this is needed, should it say anything that isn't int/string/float
-                if FSharpType.IsUnion field.PropertyType || FSharpType.IsRecord field.PropertyType then 
-                    reader.Read() |> ignore
-                    reader.Read() |> ignore
-                yield serializer.Deserialize(reader, field.PropertyType) |]
-        FSharpValue.MakeUnion(cases.[tag], fieldValues)
+          reader.Read() |> ignore //pop start obj type label
+          reader.Read() |> ignore //pop tag prop name
+          let union = FSharpType.GetUnionCases(objectType)
+          let case = union.[int(reader.Value :?> int64)]
+          let fieldValues =  [| 
+                 for field in case.GetFields() do
+                     reader.Read() |> ignore //pop item name
+                     reader.Read() |> ignore
+                     yield serializer.Deserialize(reader, field.PropertyType)
+           |] 
+
+          reader.Read() |> ignore
+          FSharpValue.MakeUnion(case, fieldValues)
 
 
