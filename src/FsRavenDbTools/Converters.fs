@@ -41,8 +41,9 @@ type UnionTypeConverter() =
 
     override x.WriteJson(writer: JsonWriter, value: obj, serializer: JsonSerializer) =
         let t = value.GetType()
-        let fieldInfo = t.GetField("_tag", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance) 
-        let tag = fieldInfo.GetValue(value) :?> int
+        let fieldInfo =  FSharpValue.PreComputeUnionTagReader(t)
+        //t.GetField("_tag", System.Reflection.BindingFlags.NonPublic |||System.Reflection.BindingFlags.Instance) 
+        let tag = fieldInfo(value)
         writer.WriteStartObject()
         writer.WritePropertyName("_tag")
         writer.WriteValue(tag)
